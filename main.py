@@ -1,5 +1,7 @@
-import pygame
 import random
+import math
+import pygame
+
 
 pygame.init()
 
@@ -30,15 +32,21 @@ Player_x_change = 0
 Widht_Enemy = 60
 Heigth_Enemy = 60
 
-#-------> importamos la imagen y la escalamos
-Img_Original_Enemy = pygame.image.load("ovni.png")
-Img_Enemy = pygame.transform.scale(Img_Original_Enemy, (Widht_Enemy, Heigth_Enemy))
+Img_Original_Enemy = []
+Img_Enemy = []
+Enemy_x = []
+Enemy_y = []
+Enemy_x_change = []
+Enemy_y_change = []
+Amount_Enemy = 8
 
-#-------> establecemos posición
-Enemy_x = random.randint(0, 736)
-Enemy_y = random.randint(50,200)
-Enemy_x_change = 0.2
-Enemy_y_change = 25
+for e in range(Amount_Enemy):
+    Img_Original_Enemy.append(pygame.image.load("ovni.png"))
+    Img_Enemy.append(pygame.transform.scale(Img_Original_Enemy, (Widht_Enemy, Heigth_Enemy)))
+    Enemy_x.append(random.randint(0, 736))
+    Enemy_y.append(random.randint(50,200))
+    Enemy_x_change.append(0.2)
+    Enemy_y_change.append(30)
 
 #! DISPARO
 #-------> tamaño del jugador
@@ -56,13 +64,17 @@ shot_x_change = 0
 shot_y_change = 0.5
 shot_visible = False
 
+#! PUNTUACIÓN
+score = 0
+
+
 def Player(x, y):
     ''',,,,,'''
     screen.blit(Img_Gamer, (x, y))
 
-def Enemy(x, y):
+def Enemy(x, y, ene):
     ''',,,,,'''
-    screen.blit(Img_Enemy, (x, y))
+    screen.blit(Img_Enemy[ene], (x, y))
 
 
 def fire_shot(x, y):
@@ -71,6 +83,13 @@ def fire_shot(x, y):
     shot_visible = True
     screen.blit(Img_Shot, (x , y + 10))
 
+def get_collision(x_1, y_1, x_2, y_2):
+    ''',,,,,,'''
+    distance = math.sqrt(math.pow(x_2 - x_1, 2) + math.pow(y_2 - y_1, 2))
+    if distance < 27:
+        return True
+    else:
+        return False
 
 running = True
 while running:
@@ -82,9 +101,9 @@ while running:
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                Player_x_change = -0.2
+                Player_x_change = -0.5
             if event.key == pygame.K_RIGHT:
-                Player_x_change = 0.2
+                Player_x_change = 0.5
             if event.key == pygame.K_SPACE:
                 if not shot_visible:
                     shot_x = Player_x
@@ -104,16 +123,25 @@ while running:
         Player_x = 736
  
 
-    Enemy_x += Enemy_x_change
+    for e in range(Amount_Enemy):
+        Enemy_x[e] += Enemy_x_change[e]
+        # mantener dentro de pantalla
+        if Enemy_x[e] <= 0:
+            Enemy_x_change[e] = 0.2
+            Enemy_y[e] += Enemy_y_change[e]
+        elif Enemy_x[e] >= 736:
+            Enemy_x_change[e] = -0.3
+            Enemy_y[e] += Enemy_y_change[e]
 
-    # mantener dentro de pantalla
-    if Enemy_x <= 0:
-        Enemy_x_change = 0.2
-        Enemy_y += Enemy_y_change
-    elif Enemy_x >= 736:
-        Enemy_x_change = -0.3
-        Enemy_y += Enemy_y_change
+        collision = get_collision(Enemy_x[e], Enemy_y[e], shot_x, shot_y)
+        if collision:
+            shot_y = 500
+            shot_visible = False
+            score += 1
+            Enemy_x[e] = random.randint(0, 736)
+            Enemy_y[e] = random.randint(50,200)
 
+        Enemy(Enemy_x[e], Enemy_y[e], e)
 
     if shot_y <= -60:
         shot_y = 530
@@ -123,8 +151,11 @@ while running:
         fire_shot(shot_x, shot_y)
         shot_y -= shot_y_change
 
+
+
+
     Player(Player_x, Player_y)
-    Enemy(Enemy_x, Enemy_y)
+
 
     pygame.display.update()
 
